@@ -32,6 +32,12 @@ Page {
             endedCallAnimation.start()
             newCallAnimation.start()
         }
+        // patch automatic-call-recording ===>
+        if (endingCall && telephony.effectiveCallCount < 2) {
+            if (_inCallView.isRecording)
+                setAudioRecording(false)
+        }
+        // patch automatic-call-recording <===
     }
 
     Component.onCompleted: updateCallingView()

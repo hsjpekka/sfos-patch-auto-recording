@@ -1,0 +1,160 @@
+
+
+diff --git a/C:/Users/pekka/koodit/patchmanager/automatic-call-recording/sfos_3.4.0.24/original/InCallView.qml b/C:/Users/pekka/koodit/patchmanager/automatic-call-recording/sfos_3.4.0.24/modified/InCallView_mod.qml
+index .. 100644
+--- a/C:/Users/pekka/koodit/patchmanager/automatic-call-recording/sfos_3.4.0.24/original/InCallView.qml
++++ b/C:/Users/pekka/koodit/patchmanager/automatic-call-recording/sfos_3.4.0.24/modified/InCallView_mod.qml
+@@ -572,7 +572,10 @@
+ 
+         onClicked: {
+             if (main.state !== 'null' && main.state !== 'disconnected') {
+-                telephony.hangupCall(telephony.primaryCall)
++                // patch auto call recording ===>
++                //telephony.hangupCall(telephony.primaryCall)
++                stopRecAndHangUp()
++                // patch auto call recording <===
+             }
+         }
+         enabled: showEndCallButton
+@@ -583,4 +586,141 @@
+     AboutSettings {
+         id: aboutSettings
+     }
++    // patch auto call recording ===>
++    property bool recPermit: callRecordingConfig.value && VoiceCall.VoiceCallAudioRecorder.available
++    property bool readyToRecord: callState === "active" && telephony.active
++    property bool isRecording: VoiceCall.VoiceCallAudioRecorder.recording // CallingView
++
++    ConfigurationGroup {
++        id: autoRecordingSettings
++        path: "/apps/patchmanager/auto-call-recording"
++        property int startDelay: 500
++        property int hangUpDelay: 1000
++    }
++
++    Image {
++        id: phoneIcon
++        source: "image://theme/icon-l-answer?" +
++                (rotation < 90 ? Theme.highlightColor : Theme.secondaryColor)
++        x: 0.5*(parent.width - width)
++        y: 0.66*parent.height
++        visible: isRecording || hangUpSoon.running
++        states: [
++            State {
++                name: "ended"
++                PropertyChanges {
++                    target: phoneIcon
++                    rotation: 135
++                }
++            }
++        ]
++
++        transitions: [
++            Transition {
++                from: ""; to: "ended"
++                PropertyAnimation {
++                    target: phoneIcon
++                    properties: "rotation"
++                    duration: hangUpSoon.interval
++                }
++            },
++            Transition {
++                from: "ended"; to: ""
++                PropertyAnimation {
++                    target: phoneIcon
++                    properties: "rotation"
++                    duration: 0
++                }
++            }
++        ]
++    }
++
++    Timer {
++        id: hangUpSoon
++        interval: 1000
++        running: false
++        repeat: false
++        onTriggered: {
++            //if (main.state === "silenced") {
++                //telephony.hangupCall(telephony.silencedCall)
++                //main.hangupAnimation.complete()
++            //} else
++            if (main.state !== 'null' && main.state !== 'disconnected') {
++                telephony.hangupCall(telephony.primaryCall)
++            }
++            phoneIcon.state = ""
++        }
++    }
++
++    function stopRecAndHangUp() {
++        var dtmin = 1
++        if (VoiceCall.VoiceCallAudioRecorder.recording) { // is callState check required? conference calls?
++            switchRecording()
++            dtmin = autoRecordingSettings.hangUpDelay // 500 ms was too short, caused bad quality in the following recordings
++            phoneIcon.state = "ended"
++        }
++        hangUpSoon.interval = dtmin
++        hangUpSoon.start()
++        return
++    }
++
++    function switchRecording() {
++        var rec = !VoiceCall.VoiceCallAudioRecorder.recording
++
++        if (rec && recPermit && !AccessPolicy.microphoneEnabled) {
++            microphoneWarningNotification.publish()
++        }
++
++        if (!recPermit) {
++            rec = false
++        }
++
++        root.setAudioRecording(rec)
++
++        return VoiceCall.VoiceCallAudioRecorder.recording
++    }
++
++    Timer {
++        id: starter
++        interval: autoRecordingSettings.startDelay // 200 ms too short for incoming calls, 500 ms enough
++        running: false
++        repeat: false
++        onTriggered: {
++            if (recPermit && !VoiceCall.VoiceCallAudioRecorder.recording) {
++                switchRecording()
++            }
++            patchStarting.state = ""
++        }
++    }
++
++    Timer {
++        id: startTimer
++        interval: 50
++        running: recPermit
++        repeat: true
++        property int nrIntervals: 0
++        onTriggered: {
++            if (root.visible && readyToRecord ) { // is main.state=='active' enough?
++                var date = new Date()
++                running = false
++                nrIntervals = 0
++
++                starter.start()
++                patchStarting.state = "started"
++            } else {
++                nrIntervals += 1
++            }
++        }
++    }
++
++    onVisibleChanged: {
++        if (visible && recPermit) {
++            if (!startTimer.running)
++                startTimer.start()
++        } else {
++            startTimer.stop()
++            starter.stop()
++        }
++    }
++    // patch auto call recording <=== v 1.1 (Pallas&Ylläs 3.4.0.24)
+ }
