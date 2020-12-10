@@ -16,7 +16,7 @@ index .. 100644
              }
          }
          enabled: showEndCallButton
-@@ -583,4 +586,141 @@
+@@ -583,4 +586,142 @@
      AboutSettings {
          id: aboutSettings
      }
@@ -30,6 +30,7 @@ index .. 100644
 +        path: "/apps/patchmanager/auto-call-recording"
 +        property int startDelay: 500
 +        property int hangUpDelay: 1000
++        property bool autoRecording: true
 +    }
 +
 +    Image {
@@ -148,7 +149,7 @@ index .. 100644
 +    }
 +
 +    onVisibleChanged: {
-+        if (visible && recPermit) {
++        if (visible && recPermit && autoRecordingSettings.autoRecording) {
 +            if (!startTimer.running)
 +                startTimer.start()
 +        } else {
@@ -156,5 +157,5 @@ index .. 100644
 +            starter.stop()
 +        }
 +    }
-+    // patch auto call recording <=== v 1.1 (Pallas&Ylläs 3.4.0.24)
++    // patch auto call recording <=== v 1.4 (Pallas&Ylläs 3.4.0.24)
  }

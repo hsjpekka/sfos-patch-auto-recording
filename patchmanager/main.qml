@@ -9,8 +9,9 @@ Page {
     ConfigurationGroup {
         id: autoRecordSettings
         path: "/apps/patchmanager/auto-call-recording"
-        property int startDelay: 500
-        property int hangUpDelay: 1000
+        property int  startDelay: 500
+        property int  hangUpDelay: 1000
+        property bool autoRecording: true
     }
 
     SilicaFlickable {
@@ -23,8 +24,8 @@ Page {
             MenuItem {
                 text: qsTr("reset delays")
                 onClicked: {
-                    startDelay.value = 0.5
-                    endDelay.value = 1.0
+                    startDelay.value = 0.5 // seconds
+                    endDelay.value = 1.0 // seconds
                 }
             }
         }
@@ -60,6 +61,15 @@ Page {
 
             SectionHeader {
                 text: qsTr("settings")
+            }
+
+            TextSwitch {
+                id: recording
+                text: checked? qsTr("automatic recording") : qsTr("does not record automatically")
+                checked: autoRecordSettings.autoRecording
+                onClicked: {
+                    autoRecordSettings.autoRecording = !autoRecordSettings.autoRecording
+                }
             }
 
             DetailItem {
