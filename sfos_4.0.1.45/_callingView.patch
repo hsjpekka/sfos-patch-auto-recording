@@ -1,0 +1,19 @@
+
+
+diff --git a/C:/Users/pekka/koodit/patchmanager/automatic-call-recording/sfos_4.0.1.45/original/CallingView.qml b/C:/Users/pekka/koodit/patchmanager/automatic-call-recording/sfos_4.0.1.45/modified/CallingView_mod.qml
+index .. 100644
+--- a/C:/Users/pekka/koodit/patchmanager/automatic-call-recording/sfos_4.0.1.45/original/CallingView.qml
++++ b/C:/Users/pekka/koodit/patchmanager/automatic-call-recording/sfos_4.0.1.45/modified/CallingView_mod.qml
+@@ -40,6 +40,12 @@
+             endedCallAnimation.start()
+             newCallAnimation.start()
+         }
++        // patch automatic-call-recording ===>
++        if (endingCall && telephony.effectiveCallCount < 2) {
++            if (_inCallView.isRecording)
++                setAudioRecording(false)
++        }
++        // patch automatic-call-recording <===
+     }
+ 
+     readonly property color answerHighlightColor: (callingView.palette.colorScheme === Theme.LightOnDark) ? "#AAFF80" : "#226600"
